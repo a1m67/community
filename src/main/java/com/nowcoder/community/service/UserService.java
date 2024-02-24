@@ -1,16 +1,118 @@
 package com.nowcoder.community.service;
 
+import com.mysql.cj.util.LogUtils;
 import com.nowcoder.community.dao.UserMapper;
 import com.nowcoder.community.entity.User;
+import com.nowcoder.community.util.CommunityUtil;
+import com.nowcoder.community.util.MailClient;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 @Service
 public class UserService {
+    public static final String TAG = "UserService";
+
+    Logger logger = LoggerFactory.getLogger(TAG);
     @Autowired
-    UserMapper userMapper;
+    private UserMapper userMapper;
+
+    @Autowired
+    private MailClient mailClient;
+
+    @Autowired
+    private TemplateEngine templateEngine;
+
+    //生成邮件的时候要包含路径名
+    @Value("${community.path.domain}")
+    private String domain;
+    //生成邮件的时候要包含项目名
+    @Value("${server.servlet.context-path}")
+    private String contextPath;
+
 
     public User findUserById(int id){
         return userMapper.selectById(id);
     }
+
+    public Map<String, Object> register(User user){
+        Map<String, Object> map = new HashMap<>();
+        if (user == null){
+            throw new IllegalArgumentException("参数不能为空");
+        }
+        if (StringUtils.isBlank(user.getUsername())){
+
+            map.put("usernameMsg","账号不能为空");
+            logger.debug(TAG,"账号不能为空");
+            return map;
+        }
+        if (StringUtils.isBlank(user.getPassword())){
+            logger.debug(TAG,"密码不能为空");
+            map.put("passwordMsg","密码不能为空");
+
+            return map;
+        }
+        if (StringUtils.isBlank(user.getEmail())){
+            logger.debug(TAG,"邮箱不能为空");
+            map.put("emailMsg","邮箱不能为空");
+            return map;
+        }
+
+        //验证账号是否存在
+        User u =  userMapper.selectByName(user.getUsername());
+        if (null != u){
+            map.put("usernameMsg","该账号已存在!");
+            logger.debug(TAG,"该账号已存在!");
+            return map;
+        }
+        //验证邮箱
+        u =  userMapper.selectByEmail(user.getEmail());
+        if (null != u){
+            map.put("emailMsg","该邮箱已存在!");
+            logger.debug(TAG,"该邮箱已存在!");
+
+            return map;
+        }
+
+        //注册用户
+        System.out.println("开始注册");
+        logger.debug(TAG,"开始注册");
+
+        user.setSalt(CommunityUtil.generateUUID().substring(0,5));
+        user.setPassword(CommunityUtil.md5(user.getPassword()+user.getSalt()));
+        user.setType(0);
+        user.setStatus(0);
+        user.setActivationCode(CommunityUtil.generateUUID());
+
+        user.setHeaderUrl(String.format("http://images.nowcoder.com/head/%dt.png",new Random().nextInt(1000)));
+        user.setCreateTime(new Date());
+
+        userMapper.insertUser(user);
+
+        // 发送激活邮件
+        logger.debug(TAG,"注册成功发送邮件");
+        Context context = new Context();
+        context.setVariable("email",user.getEmail());
+        //http://localhost:8080/community/activation/userId/code
+
+        String url = domain + contextPath + "/activation/" + user.getId() +"/" +user.getActivationCode();
+        context.setVariable("url",url);
+        String content = templateEngine.process("/mail/activation",context);
+        mailClient.sendMail(user.getEmail(),"激活邮件",content);
+
+        return map;
+    }
+
+
+
 }
