@@ -1,7 +1,9 @@
 package com.nowcoder.community.service;
 
 import com.mysql.cj.util.LogUtils;
+import com.nowcoder.community.dao.LoginTicketMapper;
 import com.nowcoder.community.dao.UserMapper;
+import com.nowcoder.community.entity.LoginTicket;
 import com.nowcoder.community.entity.User;
 import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
@@ -31,6 +33,8 @@ public class UserService implements CommunityConstant {
     @Autowired
     private MailClient mailClient;
 
+    @Autowired
+    LoginTicketMapper loginTicketMapper;
     @Autowired
     private TemplateEngine templateEngine;
 
@@ -116,13 +120,55 @@ public class UserService implements CommunityConstant {
 
     public int activation(int userId, String code) {
         User user = userMapper.selectById(userId);
-        if (user.getStatus() == 1){
+        if (user.getStatus() == 1) {
             return ACTIVATION_REPEAT;
         } else if (user.getActivationCode().equals(code)) {
+            userMapper.updateStatus(userId, 1);
             return ACTIVATION_SUCCESS;
-        }else{
+        } else {
             return ACTIVATION_FAILURE;
         }
+    }
+
+    public Map<String, Object> login(String username, String password, int expiredSeconds) {
+        Map<String, Object> map = new HashMap<>();
+        if (StringUtils.isBlank(username)) {
+            map.put("usernameMsg", "账号不能为空！");
+            return map;
+        }
+        if (StringUtils.isBlank(password)) {
+            map.put("passwordMsg", "密码不能为空！");
+            return map;
+        }
+        User user = userMapper.selectByName(username);
+        if (user == null) {
+            map.put("usernameMsg", "该用户不存在！");
+            return map;
+        }
+        if (user.getStatus() == 0) {
+            map.put("usernameMsg", "该用户未激活");
+            return map;
+        }
+        password = CommunityUtil.md5(password + user.getSalt());
+        if (!password.equals(user.getPassword())) {
+            map.put("passwordMsg", "密码错误!");
+            return map;
+        }
+        //登录成功生成登录凭证
+        LoginTicket loginTicket = new LoginTicket();
+        loginTicket.setUserId(user.getId());
+        loginTicket.setTicket(CommunityUtil.generateUUID());
+        loginTicket.setStatus(0);
+        loginTicket.setExpired(new Date(System.currentTimeMillis() + expiredSeconds * 1000));
+        loginTicketMapper.insertLoginTicket(loginTicket);
+
+        map.put("ticket",loginTicket.getTicket());
+
+        return map;
+    }
+
+    public void logout(String ticket){
+        loginTicketMapper.updateStatus(ticket,1);
     }
 
 }
