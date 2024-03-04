@@ -9,6 +9,8 @@ import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.MailClient;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -173,6 +175,14 @@ public class UserService implements CommunityConstant {
 
     public LoginTicket getLoginTicket(String ticket) {
         return loginTicketMapper.selectByTicket(ticket);
+    }
+
+    public int updateHeader(int userId,String headerUrl){
+        return userMapper.updateHeader(userId,headerUrl);
+    }
+
+    public int updatePassword(int userId,String password){
+        return userMapper.updatePassword(userId,password);
     }
 
 }
