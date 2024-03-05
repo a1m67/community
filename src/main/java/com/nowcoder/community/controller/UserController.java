@@ -133,8 +133,7 @@ public class UserController {
             model.addAttribute("newPasswordMsg", "二次输入的密码与新密码不同");
             return "/site/setting";
         }
-
-        userService.updatePassword(user.getId(), newPassword);
+        userService.updatePassword(user.getId(), CommunityUtil.md5( (newPassword + user.getSalt()) ));
         return "redirect:/index";
     }
 
