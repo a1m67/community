@@ -38,4 +38,12 @@ public class TransactionalTest {
         String obj =(String) alphaService.save2();
         System.out.println(obj);
     }
+
+    @Test
+    public void insertintouser(){
+        for (int i=130;i<131;i++){
+            System.out.println("insert into user(id,username,password,salt,email,type,status,activation_code,header_url,create_time)VALUES('"+i+"','ab"+i+"','6d80496f52255efa7a722f388e9d2324','afe62','nowcoder+"+i+"@sina.com',0,1,'','http://images.nowcoder.com/head/677t.png','2019-04-06 21:57:34');");
+        }
+    }
+
 }

@@ -133,4 +133,7 @@ public class AlphaService {
             }
         });
     }
+    
+    
+    //insert into user(id,username,password,salt,email,type,status,activation_code,header_url,create_time)VALUES('163','ab163','6d80496f52255efa7a722f388e9d2324','afe62','nowcoder163@sina.com',0,1,'','http://images.nowcoder.com/head/677t.png','2019-04-06 21:57:34');
 }
