@@ -104,7 +104,7 @@ public class UserController {
         }
     }
     @LoginRequired
-    @RequestMapping(path = "updatePassword", method = RequestMethod.POST)
+    @RequestMapping(path = "/updatePassword", method = RequestMethod.POST)
     public String updatePassword(@RequestParam("password") String password, @RequestParam("newPassword") String newPassword,
                                  @RequestParam("confirmNewPassword") String confirmNewPassword, Model model) {
 

@@ -1,11 +1,9 @@
 package com.nowcoder.community;
 
-import com.nowcoder.community.dao.AlphaDao;
-import com.nowcoder.community.dao.DiscussPostMapper;
-import com.nowcoder.community.dao.LoginTicketMapper;
-import com.nowcoder.community.dao.UserMapper;
+import com.nowcoder.community.dao.*;
 import com.nowcoder.community.entity.DiscussPost;
 import com.nowcoder.community.entity.LoginTicket;
+import com.nowcoder.community.entity.Message;
 import com.nowcoder.community.entity.User;
 import com.nowcoder.community.service.AlphaService;
 import org.junit.Test;
@@ -36,6 +34,9 @@ public class MapperTests {
 
     @Autowired
     LoginTicketMapper loginTicketMapper;
+
+    @Autowired
+    MessageMapper messageMapper;
     @Test
     public void testSelectUser() {
         User user = userMapper.selectById(101);
@@ -107,6 +108,25 @@ public class MapperTests {
 
         loginTicketMapper.updateStatus("abc",0);
         System.out.println(loginTicketMapper.selectByTicket("abc"));
+    }
+
+    @Test
+    public void testSelectMessage(){
+        List<Message> list = messageMapper.selectConversations(111,0,20);
+        for (Message message:list){
+            System.out.println(message);
+        }
+
+        System.out.println(messageMapper.selectConversationCount(111));
+
+        list =messageMapper.selectLetters("111_112",0,10);
+        for (Message message:list){
+            System.out.println(message);
+        }
+
+        System.out.println(messageMapper.selectLetterCount("111_112"));
+
+        System.out.println(messageMapper.selectLetterUnreadCount(131,"111_131"));
     }
 
 }

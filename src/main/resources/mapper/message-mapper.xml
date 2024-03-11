@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace命名规则：这个xml文件是为那个mapper服务的就写那个路径 -->
+<mapper namespace="com.nowcoder.community.dao.MessageMapper">
+    <!--   标签中的Id写对应的方法名,resultType写这个返回值的类型，写全名，这里是因为在application那个文件配置过了 mybatis.type-aliases-package=com.nowcoder.community.entity -->
+
+    <!--    复用id,username,password,salt,email,type,status,activation_code,header_url,create_time -->
+    <sql id="selectField">
+        id
+        ,from_id,to_id,conversation_id,content,status,create_time
+    </sql>
+
+    <select id="selectConversations" resultType="Message">
+        select <include refid="selectField"></include>
+        from message
+        where id in(
+        select max(id) FROM message
+        where status != 2
+        and from_id != 1
+        and (from_id = #{userId} or to_id = #{userId})
+        GROUP BY conversation_id
+        )
+        order by id desc
+        limit #{offset} ,#{limit}
+    </select>
+
+    <select id="selectConversationCount" resultType="int">
+        select count(m.maxid) from (
+        select max(id) as maxid FROM message
+        where status != 2
+        and from_id != 1
+        and (from_id = #{userId} or to_id = #{userId})
+                      GROUP BY conversation_id
+                 ) as m;
+    </select>
+
+    <select id="selectLetters" resultType="Message">
+        select
+        <include refid="selectField"></include>
+        from message
+        where conversation_id = #{conversationId}
+        and status !=2
+        and from_id!=1
+        order by id desc
+        limit #{offset},#{limit}
+    </select>
+
+    <select id="selectLetterCount" resultType="int">
+        select count(id)
+        from message
+        where conversation_id = #{conversationId}
+          and status !=2
+        and from_id!=1
+    </select>
+
+    <select id="selectLetterUnreadCount" resultType="int">
+        select count(id)
+        from message
+        where status = 0
+        and from_id!=1
+        and to_id = #{userId}
+        <if test="conversationId!=null">
+            and conversation_id = #{conversationId}
+        </if>
+    </select>
+
+</mapper>
