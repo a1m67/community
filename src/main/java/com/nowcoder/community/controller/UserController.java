@@ -2,8 +2,10 @@ package com.nowcoder.community.controller;
 
 import com.nowcoder.community.annotation.LoginRequired;
 import com.nowcoder.community.entity.User;
+import com.nowcoder.community.service.FollowService;
 import com.nowcoder.community.service.LikeService;
 import com.nowcoder.community.service.UserService;
+import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.HostHolder;
 import org.apache.commons.lang3.StringUtils;
@@ -27,7 +29,7 @@ import java.io.OutputStream;
 
 @Controller
 @RequestMapping(path = "/user")
-public class UserController {
+public class UserController implements CommunityConstant {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
@@ -41,14 +43,17 @@ public class UserController {
     HostHolder hostHolder;
     @Autowired
     UserService userService;
-
+    @Autowired
+    FollowService followService;
     @Autowired
     LikeService likeService;
+
     @LoginRequired
     @RequestMapping(path = "/setting", method = RequestMethod.GET)
     public String getSettingPage() {
         return "/site/setting";
     }
+
     @LoginRequired
     @RequestMapping(path = "/upload", method = RequestMethod.POST)
     public String uploadHeader(MultipartFile headerImage, Model model) {
@@ -107,25 +112,36 @@ public class UserController {
             throw new RuntimeException("" + e);
         }
     }
+
     //个人主页
     @RequestMapping(path = "/profile/{userId}", method = RequestMethod.GET)
-    public String getProfilePage(@PathVariable("userId") int userId, Model model){
+    public String getProfilePage(@PathVariable("userId") int userId, Model model) {
         User user = userService.findUserById(userId);
-        if (user==null){
+        if (user == null) {
             throw new RuntimeException("该用户不存在！");
         }
 
         //用户
-        model.addAttribute("user",user);
+        model.addAttribute("user", user);
         //点赞数量
         int likeCount = likeService.findUserLikeCount(userId);
-        model.addAttribute("likeCount",likeCount);
+        model.addAttribute("likeCount", likeCount);
+        //关注数量
+        long followeeCount = followService.findFolloweeCount(userId, ENTITY_TYPE_USER);
+        model.addAttribute("followeeCount", followeeCount);
+        //粉丝数量
+        long followerCount = followService.findFollowerCount(ENTITY_TYPE_USER, userId);
+        model.addAttribute("followerCount", followerCount);
+        //当前登录用户是否已关注目标用户
+
+        boolean hasFollowed = false;
+        if (hostHolder.getUser() != null) {
+            hasFollowed = followService.hasFollowed(hostHolder.getUser().getId(), ENTITY_TYPE_USER, userId);
+        }
+        model.addAttribute("hasFollowed", hasFollowed);
+
         return "/site/profile";
     }
-
-
-
-
 
     @LoginRequired
     @RequestMapping(path = "/updatePassword", method = RequestMethod.POST)
@@ -145,7 +161,7 @@ public class UserController {
             return "/site/setting";
         }
         User user = hostHolder.getUser();
-        if (!user.getPassword().equals(CommunityUtil.md5( (password + user.getSalt()) ))) {
+        if (!user.getPassword().equals(CommunityUtil.md5((password + user.getSalt())))) {
             model.addAttribute("passwordMsg", "请输入正确的原密码");
             return "/site/setting";
         }
@@ -157,11 +173,9 @@ public class UserController {
             model.addAttribute("newPasswordMsg", "二次输入的密码与新密码不同");
             return "/site/setting";
         }
-        userService.updatePassword(user.getId(), CommunityUtil.md5( (newPassword + user.getSalt()) ));
+        userService.updatePassword(user.getId(), CommunityUtil.md5((newPassword + user.getSalt())));
         return "redirect:/index";
     }
-
-
 
 
 }
