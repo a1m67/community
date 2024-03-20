@@ -2,6 +2,7 @@ package com.nowcoder.community.controller;
 
 import com.nowcoder.community.annotation.LoginRequired;
 import com.nowcoder.community.entity.User;
+import com.nowcoder.community.service.LikeService;
 import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.HostHolder;
@@ -40,6 +41,9 @@ public class UserController {
     HostHolder hostHolder;
     @Autowired
     UserService userService;
+
+    @Autowired
+    LikeService likeService;
     @LoginRequired
     @RequestMapping(path = "/setting", method = RequestMethod.GET)
     public String getSettingPage() {
@@ -103,6 +107,26 @@ public class UserController {
             throw new RuntimeException("" + e);
         }
     }
+    //个人主页
+    @RequestMapping(path = "/profile/{userId}", method = RequestMethod.GET)
+    public String getProfilePage(@PathVariable("userId") int userId, Model model){
+        User user = userService.findUserById(userId);
+        if (user==null){
+            throw new RuntimeException("该用户不存在！");
+        }
+
+        //用户
+        model.addAttribute("user",user);
+        //点赞数量
+        int likeCount = likeService.findUserLikeCount(userId);
+        model.addAttribute("likeCount",likeCount);
+        return "/site/profile";
+    }
+
+
+
+
+
     @LoginRequired
     @RequestMapping(path = "/updatePassword", method = RequestMethod.POST)
     public String updatePassword(@RequestParam("password") String password, @RequestParam("newPassword") String newPassword,
@@ -136,5 +160,8 @@ public class UserController {
         userService.updatePassword(user.getId(), CommunityUtil.md5( (newPassword + user.getSalt()) ));
         return "redirect:/index";
     }
+
+
+
 
 }
