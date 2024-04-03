@@ -6,8 +6,12 @@ import com.nowcoder.community.dao.UserMapper;
 import com.nowcoder.community.entity.DiscussPost;
 import com.nowcoder.community.entity.User;
 import com.nowcoder.community.util.CommunityUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
@@ -26,6 +30,7 @@ import java.util.Date;
 @Service
 //@Scope("prototype") 较少使用
 public class AlphaService {
+    private static final Logger logger = LoggerFactory.getLogger(AlphaService.class);
 
     @Autowired
     AlphaDao alphaDao;
@@ -133,7 +138,17 @@ public class AlphaService {
             }
         });
     }
-    
+
+    //该让方法在多线程环境下，被异步调用
+    @Async
+    public void execute1() {
+        logger.debug("execute1");
+    }
+
+    @Scheduled(initialDelay = 10000, fixedRate = 1000)
+    public void execute2() {
+        logger.debug("execute2");
+    }
     
     //insert into user(id,username,password,salt,email,type,status,activation_code,header_url,create_time)VALUES('163','ab163','6d80496f52255efa7a722f388e9d2324','afe62','nowcoder163@sina.com',0,1,'','http://images.nowcoder.com/head/677t.png','2019-04-06 21:57:34');
 }
