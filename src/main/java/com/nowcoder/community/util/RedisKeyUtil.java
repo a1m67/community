@@ -12,6 +12,10 @@ public class RedisKeyUtil {
     private static final String PREFIX_TICKET = "ticket";
     private static final String PREFIX_USER = "user";
 
+    // 独立访客，须通过用户IP排重统计数据、hyperloglog
+    private static final String PREFIX_UV  = "uv";
+    // 日活跃用户，需根据用户ID排重统计数据 bitmap
+    private static final String PREFIX_DAU = "dau";
 
     //某个实体的赞
     // like:entity:entityType:entityId -> set(userId)
@@ -49,4 +53,24 @@ public class RedisKeyUtil {
     public static String getUserKey(int userId) {
         return PREFIX_USER + SPLIT + userId;
     }
+
+    // 单日UV
+    public static String getUVKey(String date) {
+        return PREFIX_UV + SPLIT + date;
+    }
+
+    // 区间UV
+    public static String getUVKey(String startDate, String endDate) {
+        return PREFIX_UV + SPLIT + startDate + SPLIT + endDate;
+    }
+
+    // 单日活跃用户
+    public static String getDAUKey(String date) {
+        return PREFIX_DAU + SPLIT + date;
+    }
+
+    public static String getDAUKey(String startDate, String endDate) {
+        return PREFIX_DAU + SPLIT + startDate + SPLIT + endDate;
+    }
+
 }
